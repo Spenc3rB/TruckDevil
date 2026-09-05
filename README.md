@@ -17,6 +17,55 @@ However, python-can is used so any [supported CAN interface](https://python-can.
 Additional software is required to flash the m2_sketch firmware to the M2, if used (see Installation).
 
 ## Installation
+
+### From package indexes
+
+Once TruckDevil is published, install it directly from PyPI.
+
+CLI install with `uv`:
+
+```bash
+uv tool install truckdevil
+truckdevil --version
+```
+
+One-shot execution with `uvx`:
+
+```bash
+uvx truckdevil --version
+```
+
+Library or local-environment install with `pip`:
+
+```bash
+pip install truckdevil
+truckdevil --version
+```
+
+Optional pretty-printing support:
+
+```bash
+uv tool install 'truckdevil[pretty]'
+pip install 'truckdevil[pretty]'
+```
+
+### With uv (recommended)
+
+```bash
+> git clone https://github.com/LittleBlondeDevil/TruckDevil.git
+> cd TruckDevil
+> uv sync
+```
+
+Run the CLI from the project environment:
+
+```bash
+> uv run truckdevil --version
+> uv run truckdevil
+```
+
+### With pip / venv
+
 ```
 > git clone https://github.com/LittleBlondeDevil/TruckDevil.git
 > cd TruckDevil
@@ -56,6 +105,14 @@ Additional software is required to flash the m2_sketch firmware to the M2, if us
 
 From the repo root (uses a virtual CAN interface; no hardware required):
 
+With `uv`:
+
+```bash
+> uv run pytest tests/ -v
+```
+
+With `pip` / `venv`:
+
 ```
 > pip install pytest
 > python -m pytest tests/ -v
@@ -71,7 +128,7 @@ for more specific tasks.
 ### Getting Started
 * Interactively (example using M2; replace with `add_device virtual vcan0 250000` for no-hardware testing)
 ```
-> python truckdevil.py
+> uv run truckdevil
 Welcome to the truckdevil framework
 (truckdevil)?
 
@@ -122,7 +179,7 @@ help  load  print_messages  save  set  settings  unset
 ```
 * From command line (arguments are passed to module)
 ```
-> python .\truckdevil.py add_device m2 can0 250000 COM5 run_module read_messages set num_messages 5 print_messages
+> uv run truckdevil add_device m2 can0 250000 COM5 run_module read_messages set num_messages 5 print_messages
 18FECA00    06 FECA 00 --> FF [0008] 00FF00000000FFFF
 0CF00400    03 F004 00 --> FF [0008] F87D7D000000F07D
 18F00E00    06 F00E 00 --> FF [0008] FFFF285AFFFFFFFF
@@ -134,7 +191,7 @@ help  load  print_messages  save  set  settings  unset
 
 TruckDevil can integrate with the `pretty_j1939` project to provide high-performance, colorized, and searchable J1939 message rendering.
 
-The optional dependency must be installed using `pip install truckdevil[pretty]` to access this feature.
+The optional dependency can be installed with `pip install 'truckdevil[pretty]'` or `uv tool install 'truckdevil[pretty]'`.
 
 #### Settings:
 - `pretty` (boolean): Enable or disable pretty printing.
@@ -156,13 +213,88 @@ The optional dependency must be installed using `pip install truckdevil[pretty]`
 
 ### Custom Modules
 
-Create custom modules by creating a python file in the 'modules' folder. 
-The file should contain the following function:
+TruckDevil supports three module sources:
+
+1. Built-in modules bundled with TruckDevil
+2. User module directories
+3. Python packages that register entry-point plugins
+
+Every module should expose either:
+
 ```
 def main_mod(argv, device)
 ```
+
+or an entry-point callable with the same `(argv, device)` signature.
+
 - **argv** contains the list of arguments passed to the module 
 - **device** contains the Device object passed to the module
+
+### User Modules
+
+Default user module directory:
+
+```bash
+~/.config/truckdevil/modules
+```
+
+Example module file:
+
+```python
+def main_mod(argv, device):
+    print("hello from custom module", argv)
+```
+
+Run with the default user-module location:
+
+```bash
+truckdevil
+list_modules
+run_module my_module foo bar
+```
+
+Override the user module directory for a single run:
+
+```bash
+truckdevil --module-path /path/to/modules
+truckdevil --module-path /path/to/modules run_module my_module foo bar
+```
+
+You can also set it with an environment variable:
+
+```bash
+export TRUCKDEVIL_MODULE_PATH=/path/to/modules
+truckdevil
+```
+
+`TRUCKDEVIL_MODULE_PATH` accepts multiple directories separated by your platform path separator.
+
+### Plugin Packages
+
+TruckDevil also discovers modules from Python entry points in the `truckdevil.modules` group.
+
+Example plugin package configuration in `pyproject.toml`:
+
+```toml
+[project.entry-points."truckdevil.modules"]
+my_plugin = "truckdevil_my_plugin:main_mod"
+```
+
+After installing that package in the same environment as TruckDevil, the module will appear in `list_modules` and can be run with:
+
+```bash
+truckdevil run_module my_plugin
+```
+
+### In-Repo Modules
+
+If you are developing inside the TruckDevil repository itself, you can still add built-in modules under:
+
+```bash
+truckdevil/modules/
+```
+
+That is still the right approach for changes intended to ship with the main project.
 
 ### J1939 API
 

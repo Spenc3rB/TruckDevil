@@ -2,9 +2,9 @@ import copy
 import time
 import dill
 
-from j1939.j1939 import J1939Interface, J1939Message
-from libs.command import Command
-from libs.ecu import ECU
+from truckdevil.j1939.j1939 import J1939Interface, J1939Message
+from truckdevil.libs.command import Command
+from truckdevil.libs.ecu import ECU
 
 
 def input_to_int(in_str: str) -> int:
@@ -55,7 +55,6 @@ class DiscoveryCommands(Command):
         super().__init__()
         self.devil = J1939Interface(device)
         self.ed = ECUDiscovery()
-
 
     def do_save(self, arg):
         """
@@ -142,7 +141,7 @@ class DiscoveryCommands(Command):
         else:
             print("no new ecus found.")
 
-    def do_find_boot_msg(self, arg):
+    def do_find_boot_msg(self, arg):  # noqa: C901
         """
         Provide the address of the ECU to discover it's reboot message in order to detect crashes.
         ECU must be reset during this test.
@@ -159,10 +158,10 @@ class DiscoveryCommands(Command):
             return
         while True:
             val = input("please shut down the ECU, enter y when done or q to quit: ")
-            if val == 'q' or val == 'quit':
+            if val == "q" or val == "quit":
                 return
-            if val != 'y' and val != 'yes':
-                print('input not recognized.')
+            if val != "y" and val != "yes":
+                print("input not recognized.")
                 continue
             break
         print("waiting for messages to stop transmitting...")
@@ -171,10 +170,10 @@ class DiscoveryCommands(Command):
         self.devil.start_data_collection()
         while True:
             val = input("please power on the ECU, enter y when done or q to quit: ")
-            if val == 'q' or val == 'quit':
+            if val == "q" or val == "quit":
                 self.devil.stop_data_collection()
-            if val != 'y' and val != 'yes':
-                print('input not recognized.')
+            if val != "y" and val != "yes":
+                print("input not recognized.")
                 continue
             break
         messages = self.devil.stop_data_collection()
@@ -188,7 +187,7 @@ class DiscoveryCommands(Command):
         else:
             print("reboot message for ECU {}: \n{}".format(address, reboot_message))
 
-    def do_find_proprietary(self, arg):
+    def do_find_proprietary(self, arg):  # noqa: C901
         """
         Provide the address of the ECU to discover the proprietary messages it's sending.
         Performs passive and active scanning techniques.
@@ -239,7 +238,7 @@ class DiscoveryCommands(Command):
             for p in e.prop_messages:
                 print(p)
 
-    def do_find_uds(self, arg):
+    def do_find_uds(self, arg):  # noqa: C901
         # TODO: add progress bar
         """
         Provide the address of the ECU to determine if it responds to a UDS session.
@@ -344,12 +343,14 @@ class DiscoveryCommands(Command):
 
     def complete_save(self, text, line, begidx, endidx):
         import glob as g
+
         if not text:
-            return g.glob('*')
-        return g.glob(text + '*')
+            return g.glob("*")
+        return g.glob(text + "*")
 
     def complete_load(self, text, line, begidx, endidx):
         return self.complete_save(text, line, begidx, endidx)
+
 
 def main_mod(argv, device):
     if device is None:
